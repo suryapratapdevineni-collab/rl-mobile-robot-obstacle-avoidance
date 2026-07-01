@@ -8,5 +8,6 @@ from train_dqn import train
 if __name__ == "__main__":
     agent, rewards = train(
         num_episodes=250,
-        max_episode_steps=2000,
+        max_episode_steps=1800,
+        buffer_capacity=500000,
     )
