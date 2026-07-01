@@ -17,33 +17,29 @@ def train(
     buffer_capacity=300000,
     target_update_every=15,
     warmup_steps=1500,
-    max_episode_steps=400,
+    max_episode_steps=1800,
     train_every=2,
     log_path=None,
 ):
     """
     ======================================================================
-    RETUNED FOR: 1m x 1m arena, 250-episode budget, target >= 80%
-    goal-success rate by the end of training.
+    RETUNED FOR: 250-episode budget, target >= 80% goal-success rate.
     ======================================================================
     Changes from the original defaults, and why:
 
       num_episodes: 1000 -> 250
         Matches the actual training budget being targeted.
 
-      max_episode_steps: 2000 -> 400
-        In a 1x1 m arena a successful run should take roughly
-        150-400 steps (see webots_env.py docstring for the speed/
-        distance math AND the numerically-verified reward-constant
-        derivation). Letting episodes run to 2000 steps gives the
-        agent 5x+ more room to wander safely-but-uselessly than a
-        successful run needs, which is exactly the failure mode that
-        previously produced near-zero collisions but also near-zero
-        goal reaches: "wander forever without crashing" became an
-        easy local optimum the agent could fully satisfy without ever
-        needing to find the goal. Cutting the cap forces every episode
-        to either succeed reasonably quickly or be truncated -- there
-        is no slack for indefinite safe wandering.
+      max_episode_steps: 2000 -> 1800
+        Matches WebotsEnv's default episode length. This number now
+        matters for more than just a timeout: the reward function in
+        webots_env.py (all-negative-except-goal design) computes the
+        terminal goal reward as (max_episode_steps - collisions) * 2,
+        so this value MUST match whatever WebotsEnv is actually using
+        -- if you change one, change the other. See webots_env.py's
+        docstring for the full reward-function reasoning; that file is
+        the single source of truth for reward shaping, shared
+        unmodified across all four algorithm variants.
 
       target_update_every: 25 -> 15
         With fewer total episodes, the target network needs to track
@@ -244,9 +240,9 @@ if __name__ == "__main__":
     agent, rewards = train(
         num_episodes=250,
         batch_size=128,
-        buffer_capacity=300000,
+        buffer_capacity=500000,
         target_update_every=15,
-        warmup_steps=1500,
-        max_episode_steps=400,
+        warmup_steps=2000,
+        max_episode_steps=1800,
         train_every=2,
     )
