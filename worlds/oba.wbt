@@ -1,0 +1,101 @@
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/RectangleArena.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/robots/gctronic/e-puck/protos/E-puck.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/obstacles/protos/OilBarrel.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/solids/protos/SolidBox.proto"
+
+WorldInfo {
+}
+Viewpoint {
+  orientation -0.5773502691896258 0.5773502691896258 0.5773502691896258 2.0944
+  position 1.7248101622504982e-16 -3.4496203245009963e-16 3.1071417615984753
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RectangleArena {
+  translation -0.02 0 0
+  floorTileSize 0.1 0.1
+}
+DEF GOAL SolidBox {
+  translation 0.42 0.42 0
+  size 0.1 0.1 0.1
+  appearance PBRAppearance {
+    baseColor 0 1 0
+    baseColorMap ImageTexture {
+      url [
+        "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/default/worlds/textures/tagged_wall.jpg"
+      ]
+    }
+    roughness 0.5
+    metalness 0
+  }
+  recognitionColors [
+    0 1 0
+  ]
+}
+OilBarrel {
+  translation -0.46 0 0.1
+  name "oil barrel(12)"
+  height 0.2
+  radius 0.05
+}
+OilBarrel {
+  translation 0.2 -0.29 0.1
+  name "oil barrel(6)"
+  height 0.2
+  radius 0.05
+}
+OilBarrel {
+  translation 0.21 0.23 0.1
+  name "oil barrel(2)"
+  height 0.2
+  radius 0.05
+}
+DEF EPUCK E-puck {
+  translation -0.454677 -0.402146 -0.000151505
+  rotation -0.0024635293043521163 -0.010885396926197177 0.9999377176390166 0.0784629
+  controller "rl_supervisor"
+  supervisor TRUE
+  turretSlot [
+    Compass {
+      translation -0.285783 0.165 0
+      rotation 0 0 1 -2.094395307179586
+    }
+    GPS {
+    }
+  ]
+}
+OilBarrel {
+  translation 0 0 0.1
+  height 0.2
+  radius 0.05
+}
+OilBarrel {
+  translation -0.26 -0.21 0.1
+  name "oil barrel(11)"
+  height 0.2
+  radius 0.05
+}
+OilBarrel {
+  translation -0.26 0.25 0.1
+  name "oil barrel(10)"
+  height 0.2
+  radius 0.05
+}
+OilBarrel {
+  translation 0.43 0.27 0.1
+  name "oil barrel(9)"
+  height 0.2
+  radius 0.05
+}
+OilBarrel {
+  translation 0.44 -0.28 0.1
+  name "oil barrel(8)"
+  height 0.2
+  radius 0.05
+}

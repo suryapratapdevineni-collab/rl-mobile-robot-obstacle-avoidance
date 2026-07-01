@@ -1,0 +1,15 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# Linux temporary files
+*.swp
+
+# VS Code
+.vscode/
+
+# Webots
+*.wbproj
