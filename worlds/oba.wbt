@@ -6,13 +6,12 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/project
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/robots/gctronic/e-puck/protos/E-puck.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/obstacles/protos/OilBarrel.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/solids/protos/SolidBox.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/factory/containers/protos/WoodenBox.proto"
 
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.5571934324568336 0.535339749586412 0.6347809317707405 2.04628648157276
-  position 0.1487594483964575 -0.4654287536800525 2.590765713128653
+  orientation -0.5518113156102451 0.49921611166467195 0.6680475625424408 2.0543396102624323
+  position 0.12314196934606667 -0.8496796479924047 3.1089301987710036
 }
 TexturedBackground {
 }
@@ -24,56 +23,32 @@ RectangleArena {
   floorTileSize 0.1 0.1
 }
 OilBarrel {
-  translation -0.53 -0.36 0.1
-  name "oil barrel(5)"
-  height 0.2
-  radius 0.08
-}
-WoodenBox {
-  translation 0.39 -0.64 0.1
-  name "wooden box(2)"
-  size 0.2 0.2 0.2
-}
-WoodenBox {
-  translation 0.61 -0.64 0.1
-  name "wooden box(4)"
-  size 0.2 0.2 0.2
-}
-OilBarrel {
-  translation -0.43 0.52 0.1
-  name "oil barrel(7)"
-  height 0.2
-  radius 0.08
-}
-OilBarrel {
-  translation -0.68 0.65 0.1
-  name "oil barrel(4)"
-  height 0.2
-  radius 0.08
-}
-OilBarrel {
-  translation -0.59 0.51 0.1
+  translation -0.29 -0.05 0.1
   name "oil barrel(3)"
   height 0.2
   radius 0.08
 }
 OilBarrel {
-  translation 0.03 0.45 0.1
+  translation -0.62 0.24 0.1
+  name "oil barrel(5)"
+  height 0.2
+  radius 0.08
+}
+OilBarrel {
+  translation 0.45 0.11 0.1
+  name "oil barrel(7)"
+  height 0.2
+  radius 0.08
+}
+OilBarrel {
+  translation -0.3 0.65 0.1
+  name "oil barrel(4)"
+  height 0.2
+  radius 0.08
+}
+OilBarrel {
+  translation 0.03 0.28 0.1
   name "oil barrel(2)"
-  height 0.2
-  radius 0.08
-}
-OilBarrel {
-  translation 0.19 0.64 0.08
-  rotation 1 0 0 -1.5707953071795862
-  name "oil barrel(6)"
-  height 0.2
-  radius 0.08
-}
-OilBarrel {
-  translation 0.0949528 0.61554 0.108922
-  rotation 0.9636108887587227 0.25820097019273436 -0.06918319201334612 -2.6362353071795863
-  name "oil barrel(9)"
   height 0.2
   radius 0.08
 }
@@ -81,13 +56,6 @@ OilBarrel {
   translation -0.691074 -0.410574 0.1
   rotation 0 0 1 1.0472
   name "oil barrel(8)"
-  height 0.2
-  radius 0.08
-}
-OilBarrel {
-  translation -0.668033 -0.250675 0.1
-  rotation 0 0 1 1.0472
-  name "oil barrel(1)"
   height 0.2
   radius 0.08
 }
@@ -109,8 +77,14 @@ DEF GOAL SolidBox {
   ]
 }
 OilBarrel {
-  translation -0.53 0.66 0.1
+  translation -0.12 -0.49 0.1
   name "oil barrel(12)"
+  height 0.2
+  radius 0.08
+}
+OilBarrel {
+  translation 0.37 -0.32 0.1
+  name "oil barrel(1)"
   height 0.2
   radius 0.08
 }
@@ -127,13 +101,4 @@ DEF EPUCK E-puck {
     GPS {
     }
   ]
-}
-WoodenBox {
-  translation 0.62 0 0.1
-  size 0.2 0.2 0.2
-}
-WoodenBox {
-  translation 0.62 -0.23 0.1
-  name "wooden box(1)"
-  size 0.2 0.2 0.2
 }

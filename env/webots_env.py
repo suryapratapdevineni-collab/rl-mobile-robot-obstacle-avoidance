@@ -3,7 +3,7 @@ import gymnasium as gym
 from gymnasium import spaces
 from controller import Supervisor
 
-# Import the decoupled reward framework
+# Import the updated reward function
 from reward_function import compute_custom_reward
 
 class WebotsEnv(gym.Env, Supervisor):
@@ -21,10 +21,6 @@ class WebotsEnv(gym.Env, Supervisor):
         self.initial_distance = None
         self.best_distance = None
         self.goal_threshold = 0.15
-
-        self.prev_position = None
-        self.stuck_counter = 0
-        self.is_stuck = False
         self.previous_action = None
 
         # Setup Sensors
@@ -46,6 +42,9 @@ class WebotsEnv(gym.Env, Supervisor):
         self.left_motor.setVelocity(0.0)
         self.right_motor.setVelocity(0.0)
 
+        self.current_left_vel = 0.0
+        self.current_right_vel = 0.0
+
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(10,), dtype=np.float32)
         self.action_space = spaces.Discrete(6)
 
@@ -65,24 +64,24 @@ class WebotsEnv(gym.Env, Supervisor):
 
     def reset(self, seed=None, options=None):
         gym.Env.reset(self, seed=seed)
+        
+        # Reset Robot state to initial positions (Obstacles remain static)[cite: 2]
         self.trans_field.setSFVec3f(self.init_translation)
         self.rot_field.setSFRotation(self.init_rotation)
         self.robot_node.resetPhysics()
 
         self.step_count = 0
-        self.stuck_counter = 0
         self.previous_action = None
-        self.is_stuck = False
+        self.current_left_vel = 0.0
+        self.current_right_vel = 0.0
 
         Supervisor.step(self, self.timestep)
         obs = self._get_obs()
 
+        # Re-initialize distance metrics for tracking progress rewards[cite: 2]
         distance = float(obs[8])
         self.initial_distance = max(distance, 1e-3)
         self.best_distance = distance
-
-        gps = self.gps.getValues()
-        self.prev_position = np.array([gps[0], gps[1]])
 
         return obs, {}
 
@@ -94,38 +93,26 @@ class WebotsEnv(gym.Env, Supervisor):
         obs = self._get_obs()
         goal_reached, collided = self._check_status(obs)
 
-        # Call the standalone centralized reward function
+        # Calculate the reward using updated progress tracking parameters[cite: 2]
         reward = compute_custom_reward(
             obs=obs,
             action=action,
             previous_action=self.previous_action,
             goal_reached=goal_reached,
             collided=collided,
+            left_vel=self.current_left_vel,
+            right_vel=self.current_right_vel,
             best_distance=self.best_distance
         )
 
-        # Internally track the distance progression milestone
+        # Update the best distance record internally[cite: 2]
         current_distance = float(obs[8])
         if current_distance < self.best_distance:
             self.best_distance = current_distance
 
-        terminated = bool(goal_reached)
-        
-        # Stuck protection logic
-        gps = self.gps.getValues()
-        position = np.array([gps[0], gps[1]])
-        movement = np.linalg.norm(position - self.prev_position)
-        self.prev_position = position
-
-        if movement < 0.002:
-            self.stuck_counter += 1
-        else:
-            self.stuck_counter = 0
-
-        if self.stuck_counter > 60:
-            self.is_stuck = True
-
-        truncated = (self.step_count >= self.max_episode_steps) or self.is_stuck
+        # Immediate simulation termination on goal achievement OR collision[cite: 2]
+        terminated = bool(goal_reached or collided)
+        truncated = (self.step_count >= self.max_episode_steps)
 
         info = {
             "goal_reached": bool(goal_reached),
@@ -165,13 +152,10 @@ class WebotsEnv(gym.Env, Supervisor):
         elif action == 4:
             left, right = 6.0, -3.0
         else:
-            if self.previous_action == 1:
-                left, right = -2.5, -5.5
-            elif self.previous_action == 2:
-                left, right = -5.5, -2.5
-            else:
-                left, right = -5.0, -5.0
+            left, right = -5.0, -5.0
 
+        self.current_left_vel = left
+        self.current_right_vel = right
         self.left_motor.setVelocity(left)
         self.right_motor.setVelocity(right)
 
@@ -182,9 +166,8 @@ class WebotsEnv(gym.Env, Supervisor):
         goal_reached = distance <= self.goal_threshold
         collided = bool(np.max(prox) >= self.PS_COLLISION)
 
-        if goal_reached:
+        if goal_reached or collided:
             self.left_motor.setVelocity(0.0)
             self.right_motor.setVelocity(0.0)
-            print("=" * 50 + "\nGOAL REACHED\n" + "=" * 50)
 
         return goal_reached, collided
