@@ -4,7 +4,7 @@
 
 This repository presents a reinforcement learning framework for autonomous mobile robot navigation using the **Webots** simulation environment. An **e-puck differential-drive robot** is trained to navigate through a complex obstacle-filled environment while learning collision-free path planning using Deep Reinforcement Learning.
 
-The project systematically evaluates reinforcement learning algorithms under identical simulation conditions to compare sample efficiency, convergence behavior, navigation performance, and path optimization. It is being developed as part of an academic research internship with the goal of publication.
+The project systematically evaluates reinforcement learning algorithms under identical simulation conditions to compare convergence behavior, navigation performance, and policy refinement. It is being developed as part of an academic research internship with the goal of publication.
 
 ---
 
@@ -12,7 +12,7 @@ The project systematically evaluates reinforcement learning algorithms under ide
 
 - Design a robust **OpenAI Gym / Gymnasium-compatible** environment for Webots.
 - Train an autonomous e-puck robot to navigate obstacle-rich environments.
-- Benchmark multiple reinforcement learning algorithms using identical environments.
+- Compare Standard DQN and an improved DQN implementation under identical simulation conditions.
 - Engineer an effective reward function that encourages efficient navigation while preventing reward-hacking behaviors.
 
 ---
@@ -21,23 +21,25 @@ The project systematically evaluates reinforcement learning algorithms under ide
 
 | Hyperparameter | Value | Purpose |
 |---------------|-------|---------|
-| **Training Episodes** | 2500 | Allows stable convergence after exploration |
-| **Maximum Steps / Episode** | 800 | Provides sufficient navigation horizon |
-| **Episode Termination** | Immediate on Collision | Prevents inefficient looping |
+| **Training Episodes** | 2000 | Primary training for both DQN variants |
+| **Fine-Tuning Episodes** | 50 | Additional training using saved model weights |
+| **Maximum Steps / Episode** | 1400 | Provides sufficient navigation horizon |
+| **Episode Termination** | Capped termination on Collision | termination after 50 collisions |
 | **Initial ε (Exploration)** | 1.0 | Maximum early exploration |
 | **Final ε** | 0.01 | Near-greedy exploitation |
-| **Epsilon Decay** | 0.99712 | Smooth decay over ~1600 episodes |
-| **Replay Buffer Size** | 500,000 | Prevents catastrophic forgetting |
+| **Epsilon Decay** | 0.99712 | Smooth decay over training |
+| **Replay Buffer Size** | 10,00,000 | Prevents catastrophic forgetting |
 
 ---
 
 # Reward Function
 
-The reward structure is carefully engineered to discourage "suicide policies" (intentional early collisions) while encouraging smooth forward navigation.
+The reward structure is carefully engineered to discourage unsafe behaviors while encouraging smooth and efficient navigation.
 
 | Component | Reward |
 |----------|---------|
 | Goal Reached | **+500.0** |
+| Bonus Reward | **+250.0** |
 | Collision | **-250.0** |
 | Step Penalty | **-0.1** |
 | Progress Reward | **+50 × Δ Distance** |
@@ -47,6 +49,7 @@ The reward structure is carefully engineered to discourage "suicide policies" (i
 ### Reward Design
 
 - Large terminal reward for successfully reaching the goal.
+- Bounus reward for reaching the goal without collision.
 - Severe collision penalty discourages unsafe policies.
 - Continuous progress shaping rewards movement toward the goal.
 - Distance sensor penalties discourage close obstacle interactions.
@@ -61,14 +64,20 @@ rl-mobile-robot-obstacle-avoidance/
 │
 ├── controllers/
 │   └── rl_supervisor/
-│       └── supervisor.py          # Webots Supervisor controller
-│
+│       └── rl_supervisor.py          # Webots Supervisor controller
+│   └── rl_supervisor_advanced/
+|       └── rl_supervisor_advanced.py 
+|   └── dqn_controller_test/
+|       └── dqn_controller_test.py  
+|       └── networks.py  
+|
 ├── env/
 │   └── webots_env.py              # Custom Gymnasium environment
-│
+│   └── reward_function.py         # Reward function for both the algorithms
+|
 ├── training/
-│   ├── reward_function.py         # Reward computation
-│   ├── train_dqn.py               # Training entry point
+│   ├── train_dqn.py               # Standard DQN training
+│   ├── train_advanced_dqn.py      # Advanced DQN training
 │   ├── dqn_agent.py               # DQN agent implementation
 │   ├── dqn_network.py             # Neural network architecture
 │   ├── replay_buffer.py           # Experience replay memory
@@ -76,41 +85,50 @@ rl-mobile-robot-obstacle-avoidance/
 │
 ├── models/
 │   ├── training_log.csv
-│   └── training_plots.png
+│   ├── standard_dqn.pth
+│   ├── advanced_dqn.pth
+│   └── training_log_advanced.png
 │
 ├── worlds/
 │   └── oba.wbt                    # Webots simulation world
-│
+│   └── oba_advanced.wbt                    # Webots simulation world
+|
 └── README.md
 ```
 
 ---
 
-# Implemented and Planned Algorithms
+# Implemented Algorithms
 
 | Algorithm | Status |
 |-----------|--------|
-| ✅ Deep Q-Network (DQN) | Implemented |
-| ⬜ Double Deep Q-Network (DDQN) | Planned |
-| ⬜ Dueling Deep Q-Network | Planned |
+| ✅ Standard Deep Q-Network (DQN) | Implemented & Trained |
+| ✅ Advanced Deep Q-Network | Implemented & Trained |
 | ⬜ Proximal Policy Optimization (PPO) | Planned |
 | ⬜ Soft Actor-Critic (SAC) | Planned |
 
-### Deep Q-Network (DQN)
+---
 
-Baseline value-based reinforcement learning algorithm using:
+## Standard Deep Q-Network (DQN)
+
+The baseline implementation includes:
 
 - Experience Replay
 - Target Network
 - ε-Greedy Exploration
-- Neural Network Function Approximation
+- Feedforward Neural Network Function Approximation
 
-### Planned Extensions
+The Standard DQN agent was trained for **2000 episodes** to learn collision-free navigation in the designed Webots environment.
 
-- **Double DQN** to reduce value overestimation.
-- **Dueling DQN** for separate state-value and advantage estimation.
-- **PPO** for stable policy-gradient optimization.
-- **SAC** for entropy-regularized continuous control.
+---
+
+## Advanced Deep Q-Network
+
+An improved DQN implementation was developed to enhance training stability and navigation performance.
+
+The Advanced DQN model was also trained for **2000 episodes** under identical simulation conditions. After convergence, the trained model weights were saved and loaded again for an additional **50 episodes** of fine-tuning to further refine the learned navigation policy.
+
+This allows a direct comparison between the baseline and improved DQN implementations while maintaining the same environment and reward function.
 
 ---
 
@@ -133,7 +151,7 @@ git clone https://github.com/your-username/rl-mobile-robot-obstacle-avoidance.gi
 cd rl-mobile-robot-obstacle-avoidance
 ```
 
-Install dependencies
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -143,13 +161,19 @@ pip install -r requirements.txt
 
 # Training
 
-Run the DQN training pipeline:
+### Train Standard DQN
 
 ```bash
 python training/train_dqn.py
 ```
 
-During training the console displays:
+### Train Advanced DQN
+
+```bash
+python training/train_advanced_dqn.py
+```
+
+During training, the console displays:
 
 - Episode number
 - Episode reward
@@ -157,6 +181,8 @@ During training the console displays:
 - Collision status
 - Goal completion
 - Rolling success rate
+
+After the initial **2000 episodes**, the trained weights are saved and used for an additional **50 episodes** of fine-tuning.
 
 ---
 
@@ -178,7 +204,7 @@ This produces:
 
 Output:
 
-```
+```text
 models/
 └── training_plots.png
 ```
@@ -189,7 +215,7 @@ models/
 
 The agent is trained inside a **1.5 m × 1.5 m Webots world** containing approximately **12–15 static obstacles** arranged to create narrow corridors and constrained navigation paths.
 
-The robot must learn to:
+The robot learns to:
 
 - Avoid collisions
 - Navigate efficiently
@@ -200,14 +226,52 @@ The robot must learn to:
 
 # Future Work
 
-- Double DQN
-- Dueling DQN
-- PPO
-- SAC
+The current implementation serves as the foundation for several planned research extensions aimed at improving robustness and sim-to-real applicability.
+
+### Environment Improvements
+
+- Introduce randomized obstacle placement after a fixed number of episodes.
+- Generate multiple obstacle configurations during training to improve policy generalization.
+- Evaluate robustness in previously unseen environments.
+
+### Extended Training
+
+- Increase total training to approximately **15,000 episodes**.
+- Save model checkpoints every **1,000 episodes** for performance comparison and convergence analysis.
+
+### Additional Reinforcement Learning Algorithms
+
+- Proximal Policy Optimization (PPO)
+- Soft Actor-Critic (SAC)
+
+### Simulation Upgrade
+
+- Transition from **Webots** to **Gazebo** for more realistic physics and sensor noise modeling.
+- Compare policy performance between Webots and Gazebo.
+
+### Robot Platform Upgrade
+
+Replace the e-puck robot with a **TurtleBot** equipped with:
+
+- 2D LiDAR
+- Wheel Encoders
+- IMU
+- Odometry
+
+This enables experimentation with more realistic sensing and navigation methods commonly used in autonomous robotics.
+
+### Cross-Simulator Validation
+
+- Train the navigation policy in Webots.
+- Test the trained policy in Gazebo without retraining.
+- Analyze the transferability and robustness of learned policies.
+
+### Long-Term Research Directions
+
 - Curriculum Learning
 - Domain Randomization
-- Sim-to-Real Transfer
 - Dynamic Obstacle Avoidance
+- Sim-to-Real Transfer
 - Multi-Robot Reinforcement Learning
 
 ---
