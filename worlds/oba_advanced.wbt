@@ -97,7 +97,7 @@ OilBarrel {
 DEF EPUCK E-puck {
   translation -0.723398 -0.68408 -0.000337817
   rotation 0.0024635293043521163 0.010885396926197177 -0.9999377176390166 -0.07846530717958622
-  controller "rl_supervisor"
+  controller "rl_supervisor_advanced"
   supervisor TRUE
   turretSlot [
     Compass {
