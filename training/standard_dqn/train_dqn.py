@@ -40,20 +40,21 @@ def train(
     best_reward = -float("inf")
     total_steps = 0
 
-    print("Launching Standard DQN Training Routine (Continuous Bumping Engine)...\n")
+    print("Launching Standard DQN Training Routine...\n")
 
     for episode in range(num_episodes):
         state, _ = env.reset()
         episode_reward = 0.0
         episode_steps = 0
         done = False
+        collision_count = 0
+        reached_goal = False
 
         while not done:
             action = agent.select_action(state)
             next_state, reward, terminated, truncated, info = env.step(action)
             
             done = terminated or truncated
-            
             reached_goal = info["reached_goal"]
             collision_count = info["collision_count"]
 
@@ -90,11 +91,13 @@ def train(
         
         if reached_goal:
             status_str = "SUCCESS"
+        elif info.get("exceeded_collisions", False):
+            status_str = "CRASHED"
         elif episode_steps >= max_episode_steps:
             status_str = "TIMEOUT"
         else:
-            status_str = "RUNNING"
+            status_str = "TERMINATED"
 
-        print(f"Ep {episode + 1:5d} | Status: {status_str:7s} | Steps: {episode_steps:4d} | Bumps: {collision_count:3d} | Reward: {episode_reward:7.1f} | AvgReward: {avg_reward:7.1f} | Success: {success_rate_window:5.1f}%")
+        print(f"Ep {episode + 1:5d} | Status: {status_str:10s} | Steps: {episode_steps:4d} | Bumps: {collision_count:3d} | Reward: {episode_reward:7.1f} | AvgReward: {avg_reward:7.1f} | Success: {success_rate_window:5.1f}%")
 
     return agent, reward_history
