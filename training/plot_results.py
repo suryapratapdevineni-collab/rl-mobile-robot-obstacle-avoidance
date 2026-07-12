@@ -1,114 +1,120 @@
-import csv
-import os
-import sys
-import time
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 
-def load_log(log_path):
-    episodes, rewards, steps, collided, goals, epsilons = [], [], [], [], [], []
-    if not os.path.exists(log_path):
-        return None
-    try:
-        with open(log_path, 'r') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                # Fallback support for column key name variations
-                episodes.append(int(row.get('Episode') or row.get('episode') or 0))
-                rewards.append(float(row.get('Reward') or row.get('reward') or 0.0))
-                steps.append(int(row.get('Steps') or row.get('steps') or 0))
-                
-                # Normalize collision and goal keys between log specifications
-                col_val = row.get('CollisionCount') or row.get('Collided') or row.get('collision_count') or 0
-                collided.append(int(col_val))
-                
-                goal_val = row.get('ReachedGoal') or row.get('Goal') or row.get('reached_goal') or 0
-                goals.append(int(goal_val))
-                
-                epsilons.append(float(row.get('Epsilon') or row.get('epsilon') or 0.0))
-    except Exception as e:
-        # Avoid crashing if a parallel process is writing to the file at the exact same split-second
-        return None
-    
-    if not episodes:
-        return None
-    return episodes, rewards, steps, collided, goals, epsilons
+import os
+import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+WINDOW = 20
 
 def moving_average(data, window=20):
-    if len(data) == 0:
-        return []
-    result = []
+    out=[]
     for i in range(len(data)):
-        start = max(0, i - window + 1)
-        result.append(sum(data[start:i+1]) / (i - start + 1))
-    return result
+        s=max(0,i-window+1)
+        out.append(sum(data[s:i+1])/(i-s+1))
+    return out
 
-def main():
-    # Setup Paths dynamically relative to execution location
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    models_dir = os.path.abspath(os.path.join(base_dir, '..', '..', 'models'))
-    
-    # Try looking in local folder first, then fallback to relative models directory
-    standard_log = "training_log.csv" if os.path.exists("training_log.csv") else os.path.join(models_dir, 'training_log.csv')
-    advanced_log = "advanced_aligned_training_log.csv" if os.path.exists("advanced_aligned_training_log.csv") else os.path.join(models_dir, 'advanced_aligned_training_log.csv')
+def load_csv(path):
+    df=pd.read_csv(path)
+    return {
+        "Episode":df["Episode"],
+        "Reward":df["Reward"],
+        "Steps":df["Steps"],
+        "ReachedGoal":df["ReachedGoal"]
+    }
 
-    print(f"Tracking Log 1: {standard_log}")
-    print(f"Tracking Log 2: {advanced_log}")
+base=os.path.dirname(os.path.abspath(__file__))
+models=os.path.join(os.path.dirname(base),"models")
+results=os.path.join(os.path.dirname(base),"results")
+os.makedirs(results,exist_ok=True)
 
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    window_size = 20  # Smooth out variations over a 20-episode horizon
+std=load_csv(os.path.join(models,"standard_dqn_test.csv"))
+adv=load_csv(os.path.join(models,"test_advanceddqn_results.csv"))
 
-    def animate(i):
-        std_data = load_log(standard_log)
-        adv_data = load_log(advanced_log)
+def save(fig,name):
+    fig.tight_layout()
+    fig.savefig(os.path.join(results,name),dpi=300,bbox_inches="tight")
+    plt.close(fig)
 
-        # Clear axes for incoming frame redraw
-        for row in axes:
-            for ax in row:
-                ax.clear()
+# Figure1 Reward
+fig=plt.figure(figsize=(8,5))
+plt.plot(std["Episode"],moving_average(std["Reward"],WINDOW),label="Standard DQN",lw=2)
+plt.plot(adv["Episode"],moving_average(adv["Reward"],WINDOW),label="Advanced Dueling DDQN",lw=2)
+plt.title("Reward Comparison")
+plt.xlabel("Episode"); plt.ylabel("Reward")
+plt.grid(True); plt.legend()
+save(fig,"figure1_reward_comparison.png")
 
-        # Re-map standard baseline metrics
-        if std_data:
-            ep, rew, step, col, go, _ = std_data
-            axes[0, 0].plot(ep, moving_average(rew, window_size), color='tab:blue', linewidth=2, label='Standard DQN')
-            axes[0, 1].plot(ep, moving_average(col, window_size), color='tab:blue', linewidth=2)
-            axes[1, 0].plot(ep, [v * 100 for v in moving_average(go, window_size)], color='tab:blue', linewidth=2)
-            axes[1, 1].plot(ep, moving_average(step, window_size), color='tab:blue', linewidth=2)
+# Figure2 Success
+fig=plt.figure(figsize=(8,5))
+plt.plot(std["Episode"],[x*100 for x in moving_average(std["ReachedGoal"],WINDOW)],label="Standard DQN",lw=2)
+plt.plot(adv["Episode"],[x*100 for x in moving_average(adv["ReachedGoal"],WINDOW)],label="Advanced Dueling DDQN",lw=2)
+plt.title("Success Rate")
+plt.xlabel("Episode"); plt.ylabel("Success (%)")
+plt.ylim(0,100); plt.grid(True); plt.legend()
+save(fig,"figure2_success_rate.png")
 
-        # Re-map advanced dueling-ddqn metrics
-        if adv_data:
-            ep, rew, step, col, go, _ = adv_data
-            axes[0, 0].plot(ep, moving_average(rew, window_size), color='tab:orange', linewidth=2, label='Advanced Dueling DDQN')
-            axes[0, 1].plot(ep, moving_average(col, window_size), color='tab:orange', linewidth=2)
-            axes[1, 0].plot(ep, [v * 100 for v in moving_average(go, window_size)], color='tab:orange', linewidth=2)
-            axes[1, 1].plot(ep, moving_average(step, window_size), color='tab:orange', linewidth=2)
+# Figure3 Steps
+fig=plt.figure(figsize=(8,5))
+plt.plot(std["Episode"],moving_average(std["Steps"],WINDOW),label="Standard DQN",lw=2)
+plt.plot(adv["Episode"],moving_average(adv["Steps"],WINDOW),label="Advanced Dueling DDQN",lw=2)
+plt.title("Episode Length")
+plt.xlabel("Episode"); plt.ylabel("Steps")
+plt.grid(True); plt.legend()
+save(fig,"figure3_episode_steps.png")
 
-        # Apply structural styling attributes
-        axes[0, 0].set_title(f'Smoothed Rewards ({window_size}-Ep Moving Avg)')
-        axes[0, 0].set_ylabel('Score')
-        axes[0, 0].legend(loc='lower right')
+# Figure4 cumulative success
+fig=plt.figure(figsize=(8,5))
+plt.plot(std["Episode"],std["ReachedGoal"].cumsum()/(std["Episode"])*100,label="Standard DQN",lw=2)
+plt.plot(adv["Episode"],adv["ReachedGoal"].cumsum()/(adv["Episode"])*100,label="Advanced Dueling DDQN",lw=2)
+plt.title("Cumulative Success Rate")
+plt.xlabel("Episode"); plt.ylabel("Success (%)")
+plt.grid(True); plt.legend()
+save(fig,"figure4_cumulative_success.png")
 
-        axes[0, 1].set_title('Average Collisions per Episode')
-        axes[0, 1].set_ylabel('Bumps')
-        axes[0, 1].set_ylim(-2, 55) # Clear visual indicator for our 50 max collision limit
+# Figure5 box rewards
+fig=plt.figure(figsize=(7,5))
+plt.boxplot([std["Reward"],adv["Reward"]],tick_labels=["Standard","Advanced"])
+plt.title("Reward Distribution")
+plt.ylabel("Reward")
+save(fig,"figure5_reward_distribution.png")
 
-        axes[1, 0].set_title('Goal Success Rate (%)')
-        axes[1, 0].set_ylabel('Success %')
-        axes[1, 0].set_ylim(-5, 105)
+# Figure6 histogram steps
+fig=plt.figure(figsize=(8,5))
+plt.hist(std["Steps"],bins=20,alpha=0.6,label="Standard")
+plt.hist(adv["Steps"],bins=20,alpha=0.6,label="Advanced")
+plt.title("Episode Length Distribution")
+plt.xlabel("Steps"); plt.ylabel("Frequency")
+plt.legend(); plt.grid(True)
+save(fig,"figure6_steps_distribution.png")
 
-        axes[1, 1].set_title('Episode Durations (Steps)')
-        axes[1, 1].set_ylabel('Steps Taken')
+# Figure7 scatter
+fig=plt.figure(figsize=(8,5))
+plt.scatter(std["Steps"],std["Reward"],alpha=0.5,label="Standard")
+plt.scatter(adv["Steps"],adv["Reward"],alpha=0.5,label="Advanced")
+plt.title("Reward vs Steps")
+plt.xlabel("Steps"); plt.ylabel("Reward")
+plt.legend(); plt.grid(True)
+save(fig,"figure7_reward_vs_steps.png")
 
-        for row in axes:
-            for ax in row:
-                ax.set_xlabel('Episodes')
+# Figure8 summary
+metrics=["Mean Reward","Mean Steps","Success %"]
+std_vals=[std["Reward"].mean(),std["Steps"].mean(),std["ReachedGoal"].mean()*100]
+adv_vals=[adv["Reward"].mean(),adv["Steps"].mean(),adv["ReachedGoal"].mean()*100]
+import numpy as np
+x=np.arange(len(metrics)); w=0.35
+fig=plt.figure(figsize=(8,5))
+plt.bar(x-w/2,std_vals,w,label="Standard")
+plt.bar(x+w/2,adv_vals,w,label="Advanced")
+plt.xticks(x,metrics)
+plt.title("Performance Summary")
+plt.legend(); plt.grid(axis="y")
+save(fig,"figure8_performance_summary.png")
 
-        plt.tight_layout()
-
-    # Create live animation loop updating every 5000 milliseconds (5 seconds)
-    ani = FuncAnimation(fig, animate, cache_frame_data=False, interval=5000)
-    plt.show()
-
-if __name__ == '__main__':
-    main()
+summary=pd.DataFrame({
+"Metric":["Episodes","Mean Reward","Max Reward","Mean Steps","Success Rate (%)"],
+"Standard":[len(std["Episode"]),std["Reward"].mean(),std["Reward"].max(),std["Steps"].mean(),std["ReachedGoal"].mean()*100],
+"Advanced":[len(adv["Episode"]),adv["Reward"].mean(),adv["Reward"].max(),adv["Steps"].mean(),adv["ReachedGoal"].mean()*100]
+})
+summary.to_csv(os.path.join(results,"summary_statistics.csv"),index=False)
+print("Saved results to:",results)

@@ -1,0 +1,20 @@
+Metric,Standard DQN,Advanced DDQN,Better Model
+Total Episodes,50,50.0,Tie
+Successful Episodes,0,46.0,Advanced DDQN
+Success Rate (%),0.0,92.0,Advanced DDQN
+Highest Reward,-379.27,1178.94,Advanced DDQN
+Average Reward,-678.33,883.15,Advanced DDQN
+Median Reward,-665.09,1017.44,Advanced DDQN
+Reward Std Dev,147.16,444.52,Advanced DDQN
+Lowest Reward,-1121.13,-623.61,Advanced DDQN
+Average Steps,1400.0,943.76,Advanced DDQN
+Fastest Successful Episode,-,35.0,-
+Fastest Successful Steps,-,582.0,-
+Highest Reward Episode,18,35.0,Advanced DDQN
+Highest Reward Episode Steps,1400,582.0,Standard DQN
+Average Reward (Success),,1010.81,Tie
+Average Reward (Failure),-678.33,-584.91,Advanced DDQN
+Average Steps (Success),,904.09,Tie
+Average Steps (Failure),1400.0,1400.0,Tie
+Best Efficiency (Reward/Step),-0.2709,2.0257,Advanced DDQN
+Most Efficient Episode,18,35.0,Advanced DDQN
