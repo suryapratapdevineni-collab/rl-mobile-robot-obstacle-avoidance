@@ -13,8 +13,14 @@ if root_project_dir not in sys.path:
     sys.path.append(root_project_dir)
 
 from networks import StandardDQN, DuelingDQN
-from webots_env import WebotsEnv
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath( os.path.join(CURRENT_DIR, "..", ".."))
 
+ENV_DIR = os.path.join(PROJECT_ROOT, "env")
+
+sys.path.insert(0, ENV_DIR)
+
+from webots_env import WebotsEnv
 def run_deterministic_test(model_filename, model_type='standard', num_episodes=20):
     """
     Main evaluation routine running directly inside Webots. 
